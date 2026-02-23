@@ -1,0 +1,47 @@
+// helpers.js - Shared utility functions and constants
+
+export const SEV_LABELS = { normal: '정상', mild: '경도', moderate: '중등도', severe: '중증' };
+export const SEV_COLORS = {
+    normal: 'var(--status-normal)', mild: 'var(--status-mild)',
+    moderate: 'var(--status-moderate)', severe: 'var(--status-severe)'
+};
+export const GENDER_LABELS = { male: '남성', female: '여성', other: '기타' };
+export const PROGRESS_LABELS = { initial: '초기 평가', improving: '호전', plateau: '정체', worsening: '악화' };
+
+export function calculateAge(dob) {
+    const birth = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+}
+
+export function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+export function severityRank(sev) {
+    return { normal: 0, mild: 1, moderate: 2, severe: 3 }[sev] || 0;
+}
+
+// Body region sort order (head → foot)
+const REGION_SORT_KEYS = ['머리', '목', '어깨', '가슴', '상부 등', '허리', '복부', '팔', '골반', '대퇴', '종아리', '발'];
+
+export function regionSortIndex(regionName) {
+    const name = String(regionName || '');
+    for (let i = 0; i < REGION_SORT_KEYS.length; i++) {
+        if (name.includes(REGION_SORT_KEYS[i])) return i;
+    }
+    return REGION_SORT_KEYS.length;
+}
+
+// PDF-specific severity colors (RGB arrays for jsPDF setTextColor)
+export const SEV_PDF_COLORS = {
+    normal:   [76, 175, 80],     // green
+    mild:     [33, 150, 243],    // blue
+    moderate: [255, 152, 0],     // orange
+    severe:   [244, 67, 54],     // red
+};

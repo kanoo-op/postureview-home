@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>PostureView Home</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css" rel="stylesheet">
+    <style>
+        #app { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-card">
+            <h2>PostureView Home</h2>
+            <p id="progress-text">모델 로딩 중...</p>
+            <div class="progress-bar"><div id="progress-bar-fill" class="progress-bar-fill"></div></div>
+            <span id="progress-percent">0%</span>
+        </div>
+    </div>
+
+    <!-- App Shell -->
+    <div id="app" class="app-shell">
+
+        <!-- Desktop Sidebar -->
+        <aside class="app-sidebar" id="app-sidebar">
+            <div class="sidebar-brand">
+                <h1 class="sidebar-logo">PostureView</h1>
+                <span class="sidebar-subtitle">Home</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-label">매일</div>
+                <button class="sidebar-nav-item active" data-screen="today">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <span class="sidebar-label">오늘 운동</span>
+                </button>
+                <button class="sidebar-nav-item" data-screen="program">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                    <span class="sidebar-label">내 프로그램</span>
+                </button>
+
+                <div class="sidebar-section-label">관리</div>
+                <button class="sidebar-nav-item" data-screen="pain">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><path d="M12 8v8m-4-4h8m-6 4l-2 4m4-4l2 4"/></svg>
+                    <span class="sidebar-label">통증 관리</span>
+                </button>
+                <button class="sidebar-nav-item" data-screen="library">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    <span class="sidebar-label">동작 라이브러리</span>
+                </button>
+
+                <div class="sidebar-section-label">기록</div>
+                <button class="sidebar-nav-item" data-screen="progress">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    <span class="sidebar-label">진행/기록</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="btn-theme-toggle" class="sidebar-footer-btn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <span class="sidebar-label theme-label-text">다크모드</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-content">
+
+            <!-- 3D Viewer (shown only on pain screen) -->
+            <div id="viewer-container" class="viewer-container" style="display:none;">
+                <canvas id="three-canvas"></canvas>
+                <canvas id="viewport-overlay-canvas" class="viewport-overlay-canvas"></canvas>
+                <canvas id="pain-marker-canvas" class="pain-marker-canvas"></canvas>
+
+
+                <div id="floating-controls" class="floating-controls">
+                    <div class="floating-control-group">
+                        <div class="floating-control-title">보기 모드</div>
+                        <div class="render-mode-buttons">
+                            <button class="render-mode-btn active" data-render-mode="muscle">근육</button>
+                            <button class="render-mode-btn" data-render-mode="skeleton">골격</button>
+                            <button class="render-mode-btn" data-render-mode="xray">X-ray</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Screen: 오늘 운동 ═══ -->
+            <div id="screen-today" class="screen">
+                <div class="screen-content">
+                    <div class="today-header">
+                        <h2 id="today-greeting">오늘도 파이팅!</h2>
+                        <div id="streak-badge" class="streak-badge">0일 연속</div>
+                    </div>
+
+                    <!-- 통증 체크인 -->
+                    <div class="today-section" id="today-checkin-section">
+                        <h3>오늘 상태 체크</h3>
+                        <div class="checkin-card" id="checkin-card">
+                            <div class="checkin-field">
+                                <label>통증 수준 (0~10)</label>
+                                <div class="pain-slider-container">
+                                    <input type="range" id="checkin-pain" class="pain-slider" min="0" max="10" value="3">
+                                    <div class="pain-slider-labels"><span>0</span><span>5</span><span>10</span></div>
+                                    <div class="pain-slider-value" id="checkin-pain-value">3</div>
+                                </div>
+                            </div>
+                            <div class="checkin-field">
+                                <label>어떤 느낌인가요?</label>
+                                <div class="feeling-chips">
+                                    <button class="feeling-chip active" data-feeling="stiff">뻐근함</button>
+                                    <button class="feeling-chip" data-feeling="aching">쑤심</button>
+                                    <button class="feeling-chip" data-feeling="sharp">날카로움</button>
+                                    <button class="feeling-chip" data-feeling="none">괜찮음</button>
+                                </div>
+                            </div>
+                            <button class="btn-primary" id="btn-checkin-save">체크인 완료</button>
+                        </div>
+                        <div id="checkin-done" class="checkin-done" style="display:none;">
+                            <span class="checkin-done-icon">✓</span>
+                            <span>오늘 체크인 완료</span>
+                        </div>
+                    </div>
+
+                    <!-- 오늘의 루틴 -->
+                    <div class="today-section" id="today-routine-section">
+                        <h3>오늘의 루틴</h3>
+                        <div id="today-routine-container">
+                            <p class="empty-state" id="today-no-program">프로그램이 없습니다. <a href="#" id="link-go-program">내 프로그램</a>에서 만들어보세요.</p>
+                            <p class="empty-state" id="today-rest-day" style="display:none;">오늘은 휴식일이에요. 내일 다시 만나요!</p>
+                        </div>
+                        <div id="today-routine-list" style="display:none;"></div>
+                        <div id="today-routine-actions" style="display:none;">
+                            <button class="btn-primary btn-lg" id="btn-start-routine">루틴 시작</button>
+                        </div>
+                    </div>
+
+                    <!-- 운동 진행 (루틴 시작 후) -->
+                    <div id="today-active-workout" style="display:none;"></div>
+
+                    <!-- 피드백 (운동 완료 후) -->
+                    <div class="today-section" id="today-feedback-section" style="display:none;">
+                        <h3>운동 피드백</h3>
+                        <div class="feedback-card">
+                            <div class="feedback-field">
+                                <label>체감 난이도</label>
+                                <div class="rpe-chips">
+                                    <button class="rpe-chip" data-rpe="easy">쉬웠다</button>
+                                    <button class="rpe-chip active" data-rpe="moderate">적당했다</button>
+                                    <button class="rpe-chip" data-rpe="hard">어려웠다</button>
+                                </div>
+                            </div>
+                            <div class="feedback-field">
+                                <label>운동 후 통증 (0~10)</label>
+                                <div class="pain-slider-container">
+                                    <input type="range" id="feedback-pain" class="pain-slider" min="0" max="10" value="3">
+                                    <div class="pain-slider-labels"><span>0</span><span>5</span><span>10</span></div>
+                                    <div class="pain-slider-value" id="feedback-pain-value">3</div>
+                                </div>
+                            </div>
+                            <button class="btn-primary" id="btn-feedback-save">피드백 저장</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Screen: 내 프로그램 ═══ -->
+            <div id="screen-program" class="screen" style="display:none;">
+                <div class="screen-content">
+                    <h2>내 프로그램</h2>
+
+                    <div id="program-empty" class="program-empty-state">
+                        <p>아직 프로그램이 없어요.</p>
+                        <p>온보딩을 통해 맞춤 프로그램을 만들어보세요!</p>
+                        <button class="btn-primary btn-lg" id="btn-create-program">프로그램 만들기</button>
+                    </div>
+
+                    <div id="program-content" style="display:none;">
+                        <div class="program-goals" id="program-goals"></div>
+                        <div class="program-status" id="program-status"></div>
+
+                        <h3>주간 계획</h3>
+                        <div class="weekly-plan-grid" id="weekly-plan-grid"></div>
+
+                        <div class="program-actions">
+                            <button class="btn-secondary" id="btn-edit-program">설정 변경</button>
+                            <button class="btn-secondary btn-danger" id="btn-regenerate-program">프로그램 재생성</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Screen: 통증/불편 관리 ═══ -->
+            <div id="screen-pain" class="screen" style="display:none;">
+                <div id="pain-panel" class="bodymap-panel">
+                    <div class="bodymap-panel-header">
+                        <h3>어디가 불편하세요?</h3>
+                        <p class="bodymap-hint">3D 모형에서 부위를 터치하세요</p>
+                        <div class="draw-actions">
+                            <button id="btn-draw-mode" class="btn-draw-mode">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                <span>그리기</span>
+                            </button>
+                        </div>
+                        <div id="draw-toolbar" class="draw-toolbar" style="display:none;">
+                            <div class="draw-toolbar-row">
+                                <div class="draw-tool-group">
+                                    <button class="draw-tool-btn active" data-tool="pen" title="펜">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                    </button>
+                                    <button class="draw-tool-btn" data-tool="circle" title="원">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+                                    </button>
+                                    <button class="draw-tool-btn" data-tool="eraser" title="지우개">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l7-7 10 10z"/><path d="M6.5 13.5l4-4"/></svg>
+                                    </button>
+                                </div>
+                                <div class="draw-divider"></div>
+                                <div class="draw-color-group">
+                                    <button class="draw-color-btn active" data-color="#F44336" title="빨강"><span class="color-swatch" style="background:#F44336;"></span></button>
+                                    <button class="draw-color-btn" data-color="#FF9800" title="주황"><span class="color-swatch" style="background:#FF9800;"></span></button>
+                                    <button class="draw-color-btn" data-color="#FFEB3B" title="노랑"><span class="color-swatch" style="background:#FFEB3B;"></span></button>
+                                    <button class="draw-color-btn" data-color="#2196F3" title="파랑"><span class="color-swatch" style="background:#2196F3;"></span></button>
+                                    <button class="draw-color-btn" data-color="#4CAF50" title="초록"><span class="color-swatch" style="background:#4CAF50;"></span></button>
+                                    <button class="draw-color-btn" data-color="#FFFFFF" title="흰색"><span class="color-swatch color-swatch-light" style="background:#FFFFFF;"></span></button>
+                                </div>
+                            </div>
+                            <div class="draw-toolbar-row">
+                                <div class="draw-size-group">
+                                    <svg class="draw-size-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>
+                                    <input type="range" id="draw-size" class="draw-size-slider" min="1" max="12" value="4">
+                                    <svg class="draw-size-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+                                </div>
+                                <div class="draw-divider"></div>
+                                <div class="draw-action-group">
+                                    <button id="btn-draw-undo" class="draw-act-btn" title="되돌리기">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                                    </button>
+                                    <button id="btn-draw-clear" class="draw-act-btn" title="전체 지우기">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    </button>
+                                    <button id="btn-draw-save" class="draw-act-btn draw-save-btn" title="이미지 저장">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        <span>저장</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 부위 선택 전 -->
+                    <div id="pain-selection" class="bodymap-selection" style="display:none;">
+                        <div class="bodymap-region-name" id="pain-region-name"></div>
+
+                        <div class="bodymap-field">
+                            <label>통증 수준</label>
+                            <div class="pain-slider-container">
+                                <input type="range" id="pain-slider" class="pain-slider" min="1" max="10" value="5">
+                                <div class="pain-slider-labels"><span>1</span><span>5</span><span>10</span></div>
+                                <div class="pain-slider-value" id="pain-slider-value">5</div>
+                            </div>
+                        </div>
+
+                        <div class="bodymap-field">
+                            <label>통증 유형</label>
+                            <div class="pain-type-chips">
+                                <button class="pain-chip active" data-type="dull">둔한 통증</button>
+                                <button class="pain-chip" data-type="sharp">찌르는 통증</button>
+                                <button class="pain-chip" data-type="aching">쑤시는 통증</button>
+                                <button class="pain-chip" data-type="stiffness">뻣뻣함</button>
+                            </div>
+                        </div>
+
+                        <div class="bodymap-field">
+                            <label>메모 (선택)</label>
+                            <input type="text" id="pain-note" class="pain-note-input" placeholder="예: 오래 앉아있으면 심해짐">
+                        </div>
+
+                        <div class="pain-actions">
+                            <button id="btn-save-pain" class="btn-primary">통증 기록 저장</button>
+                            <button id="btn-relief-routine" class="btn-secondary">완화 루틴 받기</button>
+                        </div>
+
+                        <!-- 안전 경고 -->
+                        <div id="pain-safety-warning" class="safety-warning" style="display:none;"></div>
+
+                        <!-- 완화 루틴 -->
+                        <div id="relief-routine-container" style="display:none;"></div>
+
+                        <!-- 추천 운동 -->
+                        <div class="bodymap-exercises" id="bodymap-exercises">
+                            <h4>추천 운동</h4>
+                            <div id="bodymap-exercise-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Screen: 동작 라이브러리 ═══ -->
+            <div id="screen-library" class="screen" style="display:none;">
+                <div class="screen-content">
+                    <h2>동작 라이브러리</h2>
+                    <div id="exercise-library-container">
+                        <div class="ex-lib-search-bar">
+                            <input type="text" id="ex-lib-search" class="ex-lib-search-input" placeholder="운동 검색...">
+                            <div class="ex-lib-diff-filters">
+                                <button class="ex-diff-btn active" data-diff="all">전체</button>
+                                <button class="ex-diff-btn" data-diff="쉬움">쉬움</button>
+                                <button class="ex-diff-btn" data-diff="보통">보통</button>
+                                <button class="ex-diff-btn" data-diff="어려움">어려움</button>
+                            </div>
+                        </div>
+                        <div id="ex-lib-categories" class="ex-lib-categories"></div>
+                        <div id="ex-lib-tag-filters" class="ex-lib-tag-filters"></div>
+                        <div id="ex-lib-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Screen: 진행/기록 ═══ -->
+            <div id="screen-progress" class="screen" style="display:none;">
+                <div class="screen-content">
+                    <div class="screen-tabs">
+                        <button class="screen-tab active" data-tab="prog-overview">개요</button>
+                        <button class="screen-tab" data-tab="prog-pain">통증일지</button>
+                        <button class="screen-tab" data-tab="prog-exercise">운동로그</button>
+                        <button class="screen-tab" data-tab="prog-charts">경과차트</button>
+                    </div>
+
+                    <div id="prog-overview" class="tab-content">
+                        <div class="progress-overview">
+                            <div class="progress-streak-card" id="progress-streak"></div>
+                            <div class="progress-weekly-card" id="progress-weekly"></div>
+                            <div class="progress-pain-summary" id="progress-pain-trend"></div>
+                        </div>
+                    </div>
+
+                    <div id="prog-pain" class="tab-content" style="display:none;">
+                        <div id="pain-diary-list">
+                            <p class="empty-state">기록이 없습니다.</p>
+                        </div>
+                    </div>
+
+                    <div id="prog-exercise" class="tab-content" style="display:none;">
+                        <div id="exercise-log-list">
+                            <p class="empty-state">운동 기록이 없습니다.</p>
+                        </div>
+                    </div>
+
+                    <div id="prog-charts" class="tab-content" style="display:none;">
+                        <div class="chart-container"><canvas id="progress-pain-chart"></canvas></div>
+                        <div class="chart-container"><canvas id="progress-exercise-chart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Mobile Bottom Tabs -->
+        <nav class="bottom-tabs" id="bottom-tabs">
+            <button class="bottom-tab active" data-screen="today">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>오늘</span>
+            </button>
+            <button class="bottom-tab" data-screen="program">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+                <span>프로그램</span>
+            </button>
+            <button class="bottom-tab" data-screen="pain">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><path d="M12 8v8m-4-4h8m-6 4l-2 4m4-4l2 4"/></svg>
+                <span>통증관리</span>
+            </button>
+            <button class="bottom-tab" data-screen="library">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                <span>라이브러리</span>
+            </button>
+            <button class="bottom-tab" data-screen="progress">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                <span>기록</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="tooltip" style="display:none;">
+        <div id="tooltip-tissue" class="tooltip-tissue"></div>
+        <div id="tooltip-region" class="tooltip-region"></div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Video Modal -->
+    <div id="video-modal-overlay" class="video-modal-overlay" style="display:none;">
+        <div class="video-modal-content">
+            <button class="video-modal-close" id="video-modal-close">&times;</button>
+            <div id="video-modal-player"></div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

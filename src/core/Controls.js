@@ -1,0 +1,182 @@
+// Controls.js - OrbitControls, raycaster, mesh picking, camera presets
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { scene, camera, renderer } from './SceneManager.js';
+import { viewMode, getViewportAtMouse, getViewportCamera, mouseToViewportNDC, registerMainControls } from './MultiView.js';
+import { handleClick as ssClick, handleHover as ssHover, handleRightClick as ssRightClick } from './SelectionService.js';
+
+export let orbitControls;
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let canvas;
+
+// Model center (set from viewer bounds, used for camera presets)
+let modelCenter = new THREE.Vector3();
+
+// Camera animation
+let cameraAnimation = null;
+
+/**
+ * Initialize controls
+ */
+export function initControls(canvasEl, callbacks = {}) {
+    canvas = canvasEl;
+
+    // Set model center if provided
+    if (callbacks.modelCenter) {
+        modelCenter.copy(callbacks.modelCenter);
+    }
+
+    // OrbitControls
+    orbitControls = new OrbitControls(camera, canvas);
+    orbitControls.enableDamping = true;
+    orbitControls.dampingFactor = 0.08;
+    orbitControls.screenSpacePanning = true;
+    orbitControls.minDistance = 0.3;
+    orbitControls.maxDistance = 10;
+    orbitControls.target.copy(modelCenter);
+    orbitControls.update();
+
+    // 멀티뷰 모듈에 메인 controls 등록
+    registerMainControls(orbitControls);
+
+    // Event listeners
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('click', onClick);
+    canvas.addEventListener('contextmenu', onRightClick);
+
+    // Start update loop
+    updateLoop();
+}
+
+function updateLoop() {
+    requestAnimationFrame(updateLoop);
+
+    // Update orbit controls
+    if (orbitControls) {
+        orbitControls.update();
+    }
+
+    // Animate camera if active
+    if (cameraAnimation) {
+        const { startPos, endPos, startTarget, endTarget, startTime, duration } = cameraAnimation;
+        const elapsed = Date.now() - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        // Smooth ease-in-out
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        camera.position.lerpVectors(startPos, endPos, ease);
+        orbitControls.target.lerpVectors(startTarget, endTarget, ease);
+
+        if (t >= 1) {
+            cameraAnimation = null;
+        }
+    }
+}
+
+function getMouseAndCamera(event) {
+    if (viewMode !== 'single') {
+        const vpIdx = getViewportAtMouse(event.clientX, event.clientY);
+        const ndc = mouseToViewportNDC(event.clientX, event.clientY, vpIdx);
+        return { mouse: ndc, cam: getViewportCamera(vpIdx) };
+    }
+    const rect = canvas.getBoundingClientRect();
+    return {
+        mouse: {
+            x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            y: -((event.clientY - rect.top) / rect.height) * 2 + 1,
+        },
+        cam: camera,
+    };
+}
+
+function onPointerMove(event) {
+    const { mouse: m, cam } = getMouseAndCamera(event);
+    mouse.x = m.x;
+    mouse.y = m.y;
+
+    // Raycast for hover — pass ALL intersects to SelectionService
+    raycaster.setFromCamera(mouse, cam);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    // Cursor hint: check if any visible mesh is hit
+    const hasHit = intersects.some(i => i.object.isMesh && i.object.visible);
+    canvas.style.cursor = hasHit ? 'pointer' : 'default';
+
+    ssHover(intersects, event);
+}
+
+function onClick(event) {
+    // Ignore if user was orbiting (dragged)
+    if (orbitControls && orbitControls._isDragging) return;
+
+    const { mouse: m, cam } = getMouseAndCamera(event);
+    raycaster.setFromCamera(m, cam);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    // Pass ALL intersects to SelectionService (filtering happens there)
+    ssClick(intersects, event);
+}
+
+function onRightClick(event) {
+    event.preventDefault();
+
+    const { mouse: m, cam } = getMouseAndCamera(event);
+    raycaster.setFromCamera(m, cam);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    ssRightClick(intersects);
+}
+
+/**
+ * Animate camera to a preset position
+ */
+export function animateCameraTo(position, target, duration = 800) {
+    cameraAnimation = {
+        startPos: camera.position.clone(),
+        endPos: new THREE.Vector3(...position),
+        startTarget: orbitControls.target.clone(),
+        endTarget: target ? new THREE.Vector3(...target) : modelCenter.clone(),
+        startTime: Date.now(),
+        duration
+    };
+}
+
+/**
+ * Enable/disable OrbitControls (for draw mode etc.)
+ */
+export function setOrbitEnabled(enabled) {
+    if (orbitControls) orbitControls.enabled = enabled;
+}
+
+/**
+ * Camera preset views
+ */
+export function setCameraPreset(preset) {
+    const dist = 2.5;
+    const cx = modelCenter.x, cy = modelCenter.y, cz = modelCenter.z;
+    const target = [cx, cy, cz];
+
+    switch (preset) {
+        case 'front':
+            animateCameraTo([cx, cy + 0.3, cz + dist], target);
+            break;
+        case 'back':
+            animateCameraTo([cx, cy + 0.3, cz - dist], target);
+            break;
+        case 'left':
+            animateCameraTo([cx - dist, cy + 0.3, cz], target);
+            break;
+        case 'right':
+            animateCameraTo([cx + dist, cy + 0.3, cz], target);
+            break;
+        case 'top':
+            animateCameraTo([cx, cy + dist, cz + 0.01], target);
+            break;
+        case 'reset':
+            animateCameraTo([cx, cy + 0.5, cz + dist * 1.2], target);
+            break;
+    }
+}
