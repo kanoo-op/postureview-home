@@ -4,6 +4,7 @@ import { onSelect, onDeselect } from '../core/SelectionService.js';
 import { getRegionDisplayName, getExercisesForRegion, getCameraPreset } from '../anatomy/BodyData.js';
 import { getMeshRegionKey } from '../anatomy/Regions.js';
 import { addPainLog, getPainLogsByRegion, addReliefSession, updateReliefSession } from '../services/Storage.js';
+import { syncNow } from '../services/SyncService.js';
 import { getReliefRoutine } from '../services/ProgramEngine.js';
 import { renderer, camera, scene } from '../core/SceneManager.js';
 import { setOrbitEnabled } from '../core/Controls.js';
@@ -123,6 +124,9 @@ async function handleSavePain() {
     if (value) value.textContent = '5';
     if (noteInput) noteInput.value = '';
     window.showToast?.('통증 기록이 저장되었습니다.', 'success');
+
+    // 병원 앱에서 바로 확인할 수 있도록 즉시 동기화
+    syncNow().catch(() => {});
 }
 
 async function handleReliefRoutine() {
