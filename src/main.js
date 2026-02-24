@@ -16,6 +16,11 @@ import { initPainScreen, cleanupPainScreen } from './screens/PainScreen.js';
 import { initLibraryScreen } from './screens/LibraryScreen.js';
 import { initProgramScreen } from './screens/ProgramScreen.js';
 import { initProgressScreen } from './screens/ProgressScreen.js';
+import { initSettingsScreen } from './screens/SettingsScreen.js';
+import { initPostureScreen, cleanupPostureScreen } from './screens/PostureScreen.js';
+import { initSearchScreen } from './screens/SearchScreen.js';
+import { isLoggedIn } from './services/ApiClient.js';
+import { startAutoSync } from './services/SyncService.js';
 import { checkOnboarding } from './app/Onboarding.js';
 import { checkAchievements } from './utils/gamification.js';
 import { getAppData, migrateV1Plans } from './services/Storage.js';
@@ -89,11 +94,15 @@ loadModel(
             const viewer = document.getElementById('viewer-container');
             if (viewer) viewer.style.display = '';
         });
+        registerScreen('posture', () => initPostureScreen());
+        registerScreen('search', () => initSearchScreen());
         registerScreen('library', () => initLibraryScreen());
         registerScreen('progress', () => initProgressScreen());
+        registerScreen('settings', () => initSettingsScreen());
 
         // Cleanup: 화면 전환 시 정리
         registerScreenCleanup('pain', cleanupPainScreen);
+        registerScreenCleanup('posture', cleanupPostureScreen);
 
         // Init UI features
         initRenderModeToggle();
@@ -128,6 +137,11 @@ loadModel(
 
         // Check achievements in background
         setTimeout(() => checkAchievements(), 2000);
+
+        // Start auto sync if logged in
+        if (isLoggedIn()) {
+            startAutoSync();
+        }
     },
     // onError
     (error) => {

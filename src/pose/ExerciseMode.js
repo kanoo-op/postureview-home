@@ -6,7 +6,7 @@ import { LM } from './PoseDetector.js';
 
 // ═══ 관절 각도 정의 ═══
 
-const JOINT_DEFS = {
+export const JOINT_DEFS = {
     neck_flexion: {
         points: [LM.NOSE, LM.LEFT_SHOULDER, LM.LEFT_HIP],
         pointsR: [LM.NOSE, LM.RIGHT_SHOULDER, LM.RIGHT_HIP],
@@ -24,7 +24,7 @@ const JOINT_DEFS = {
     ankle_r: { points: [LM.RIGHT_KNEE, LM.RIGHT_ANKLE, LM.RIGHT_HEEL] },
 };
 
-const JOINT_LABELS = {
+export const JOINT_LABELS = {
     neck_flexion: '목',
     shoulder_l: '어깨(좌)', shoulder_r: '어깨(우)',
     elbow_l: '팔꿈치(좌)', elbow_r: '팔꿈치(우)',
@@ -35,7 +35,7 @@ const JOINT_LABELS = {
 
 // ═══ 운동 프리셋 ═══
 
-const EXERCISE_PRESETS = {
+export const EXERCISE_PRESETS = {
     standing: {
         label: '직립 자세',
         joints: {
@@ -148,7 +148,7 @@ const EXERCISE_PRESETS = {
 
 // ═══ 2D 스켈레톤 연결선 ═══
 
-const SKELETON_CONNS = [
+export const SKELETON_CONNS = [
     [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
     [11, 23], [12, 24], [23, 24],
     [23, 25], [25, 27], [24, 26], [26, 28],
@@ -173,7 +173,7 @@ export function initExerciseMode() {
 
 // ═══ 프리셋 결정 ═══
 
-function getPresetKey(exerciseName) {
+export function getPresetKey(exerciseName) {
     const name = (exerciseName || '').toLowerCase();
 
     // 특정 운동 키워드 (우선 매칭)
@@ -366,7 +366,7 @@ function embedReferenceVideo(videoId, exerciseName) {
 
 // ═══ 3점 각도 계산 ═══
 
-function calcAngle3(a, b, c) {
+export function calcAngle3(a, b, c) {
     if (!a || !b || !c) return null;
     const ba = { x: a.x - b.x, y: a.y - b.y, z: (a.z || 0) - (b.z || 0) };
     const bc = { x: c.x - b.x, y: c.y - b.y, z: (c.z || 0) - (b.z || 0) };
@@ -380,10 +380,10 @@ function calcAngle3(a, b, c) {
 
 // ═══ 폼 평가 ═══
 
-function evaluateForm(landmarks) {
+export function evaluateFormForPreset(landmarks, preset) {
     const results = {};
 
-    for (const [jointId, range] of Object.entries(currentPreset.joints)) {
+    for (const [jointId, range] of Object.entries(preset.joints)) {
         const def = JOINT_DEFS[jointId];
         if (!def) continue;
 
@@ -414,9 +414,13 @@ function evaluateForm(landmarks) {
     return results;
 }
 
+function evaluateForm(landmarks) {
+    return evaluateFormForPreset(landmarks, currentPreset);
+}
+
 // ═══ 점수 계산 ═══
 
-function calcOverallScore(jointResults) {
+export function calcOverallScore(jointResults) {
     let total = 0, count = 0;
     for (const r of Object.values(jointResults)) {
         if (r.angle === null) continue;
@@ -430,7 +434,7 @@ function calcOverallScore(jointResults) {
 
 // ═══ 2D 스켈레톤 그리기 ═══
 
-function drawSkeleton(ctx, landmarks, jointResults, w, h) {
+export function drawSkeleton(ctx, landmarks, jointResults, w, h) {
     // 추적 관절 인덱스 → 상태
     const trackedJoints = new Map();
     for (const [jointId, result] of Object.entries(jointResults)) {
@@ -488,7 +492,7 @@ function drawSkeleton(ctx, landmarks, jointResults, w, h) {
     }
 }
 
-function statusColor(status, alpha) {
+export function statusColor(status, alpha) {
     switch (status) {
         case 'good': return `rgba(46, 204, 113, ${alpha})`;
         case 'warning': return `rgba(241, 196, 15, ${alpha})`;

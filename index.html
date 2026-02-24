@@ -47,6 +47,14 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><path d="M12 8v8m-4-4h8m-6 4l-2 4m4-4l2 4"/></svg>
                     <span class="sidebar-label">통증 관리</span>
                 </button>
+                <button class="sidebar-nav-item" data-screen="posture">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 100 6 3 3 0 000-6z"/><path d="M20 21v-2a4 4 0 00-3-3.87M12 10v4m-3 3l1-3h4l1 3"/></svg>
+                    <span class="sidebar-label">자세 분석</span>
+                </button>
+                <button class="sidebar-nav-item" data-screen="search">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <span class="sidebar-label">질환 검색</span>
+                </button>
                 <button class="sidebar-nav-item" data-screen="library">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                     <span class="sidebar-label">동작 라이브러리</span>
@@ -56,6 +64,12 @@
                 <button class="sidebar-nav-item" data-screen="progress">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
                     <span class="sidebar-label">진행/기록</span>
+                </button>
+
+                <div class="sidebar-section-label">설정</div>
+                <button class="sidebar-nav-item" data-screen="settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                    <span class="sidebar-label">설정</span>
                 </button>
             </nav>
 
@@ -300,6 +314,88 @@
                 </div>
             </div>
 
+            <!-- ═══ Screen: 자세 분석 ═══ -->
+            <div id="screen-posture" class="screen" style="display:none;">
+                <div class="screen-content">
+                    <h2>자세 분석</h2>
+
+                    <!-- 입력 영역 -->
+                    <div class="posture-input-area">
+                        <div class="posture-dropzone" id="posture-dropzone">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            <p>사진을 드래그하거나 클릭하여 업로드</p>
+                            <button class="btn-secondary btn-sm-pad" id="posture-browse-btn">파일 선택</button>
+                            <input type="file" id="posture-file-input" accept="image/*" style="display:none;">
+                        </div>
+
+                        <div class="posture-webcam-controls">
+                            <button class="btn-secondary" id="posture-webcam-start">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                웹캠 촬영
+                            </button>
+                            <button class="btn-primary" id="posture-webcam-capture" style="display:none;">촬영</button>
+                            <button class="btn-secondary" id="posture-webcam-stop" style="display:none;">중지</button>
+                        </div>
+
+                        <div class="posture-webcam-area" id="posture-webcam-area" style="display:none;">
+                            <video id="posture-webcam-video" autoplay playsinline muted></video>
+                        </div>
+                    </div>
+
+                    <!-- 로딩/에러 -->
+                    <div class="posture-loading" id="posture-loading" style="display:none;">
+                        <div class="spinner"></div>
+                        <span class="posture-loading-text">분석 중...</span>
+                    </div>
+                    <div class="posture-error" id="posture-error" style="display:none;"></div>
+
+                    <!-- 미리보기 -->
+                    <div class="posture-preview-area" id="posture-preview-area" style="display:none;">
+                        <canvas id="posture-image-canvas"></canvas>
+                        <canvas id="posture-overlay-canvas"></canvas>
+                    </div>
+
+                    <!-- 분석 결과 -->
+                    <div class="posture-results" id="posture-results" style="display:none;"></div>
+
+                    <!-- 분석 기록 -->
+                    <div class="posture-history">
+                        <h3>분석 기록</h3>
+                        <div id="posture-history-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ Screen: 질환 검색 ═══ -->
+            <div id="screen-search" class="screen" style="display:none;">
+                <div class="screen-content">
+                    <h2>질환 검색</h2>
+
+                    <div class="search-bar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input type="text" id="search-anatomy-input" placeholder="질환, 근육, 부위를 검색하세요..." autocomplete="off">
+                    </div>
+
+                    <div class="search-popular-tags" id="search-popular-tags">
+                        <span class="search-section-label">인기 검색</span>
+                        <div class="search-tags-wrap">
+                            <button class="search-tag" data-query="허리 통증">허리 통증</button>
+                            <button class="search-tag" data-query="어깨">어깨</button>
+                            <button class="search-tag" data-query="목 디스크">목 디스크</button>
+                            <button class="search-tag" data-query="무릎">무릎</button>
+                            <button class="search-tag" data-query="오십견">오십견</button>
+                            <button class="search-tag" data-query="골반">골반</button>
+                            <button class="search-tag" data-query="손목">손목</button>
+                            <button class="search-tag" data-query="발목">발목</button>
+                        </div>
+                    </div>
+
+                    <div id="search-results"></div>
+                </div>
+            </div>
+
             <!-- ═══ Screen: 동작 라이브러리 ═══ -->
             <div id="screen-library" class="screen" style="display:none;">
                 <div class="screen-content">
@@ -358,6 +454,14 @@
                 </div>
             </div>
 
+            <!-- ═══ Screen: 설정 ═══ -->
+            <div id="screen-settings" class="screen" style="display:none;">
+                <div class="screen-content">
+                    <h2>설정</h2>
+                    <div id="settings-content"></div>
+                </div>
+            </div>
+
         </main>
 
         <!-- Mobile Bottom Tabs -->
@@ -374,6 +478,14 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><path d="M12 8v8m-4-4h8m-6 4l-2 4m4-4l2 4"/></svg>
                 <span>통증관리</span>
             </button>
+            <button class="bottom-tab" data-screen="posture">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 100 6 3 3 0 000-6z"/><path d="M20 21v-2a4 4 0 00-3-3.87M12 10v4m-3 3l1-3h4l1 3"/></svg>
+                <span>자세분석</span>
+            </button>
+            <button class="bottom-tab" data-screen="search">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>검색</span>
+            </button>
             <button class="bottom-tab" data-screen="library">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 <span>라이브러리</span>
@@ -381,6 +493,10 @@
             <button class="bottom-tab" data-screen="progress">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
                 <span>기록</span>
+            </button>
+            <button class="bottom-tab" data-screen="settings">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                <span>설정</span>
             </button>
         </nav>
     </div>

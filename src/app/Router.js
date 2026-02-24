@@ -1,6 +1,6 @@
 // Router.js - 5-screen router (v2: restructured navigation)
 
-const SCREENS = ['today', 'program', 'pain', 'library', 'progress'];
+const SCREENS = ['today', 'program', 'pain', 'posture', 'search', 'library', 'progress', 'settings'];
 let currentScreen = null;
 let screenInitFns = {};
 let screenCleanupFns = {};

@@ -165,6 +165,16 @@ async function renderExerciseLog() {
 
 // ═══ Charts ═══
 
+function calcDayRange(items) {
+    const now = new Date();
+    if (!items.length) return 3;
+    const dates = items.map(item => item.date?.split('T')[0]).filter(Boolean).sort();
+    if (!dates.length) return 3;
+    const earliest = new Date(dates[0] + 'T00:00:00');
+    const daySpan = Math.ceil((now - earliest) / (1000 * 60 * 60 * 24));
+    return Math.min(Math.max(daySpan + 1, 3), 30);
+}
+
 let ChartJS = null;
 
 async function renderCharts() {
@@ -193,10 +203,11 @@ async function renderPainChart(Chart) {
     if (logs.length === 0) return;
 
     const now = new Date();
+    const totalDays = calcDayRange(logs);
     const labels = [];
     const data = [];
 
-    for (let i = 13; i >= 0; i--) {
+    for (let i = totalDays - 1; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
@@ -214,7 +225,7 @@ async function renderPainChart(Chart) {
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, title: { display: true, text: '통증 추이 (14일)', font: { size: 13 } } },
+            plugins: { legend: { display: false }, title: { display: true, text: `통증 추이 (${totalDays}일)`, font: { size: 13 } } },
             scales: { y: { min: 0, max: 10, ticks: { stepSize: 2 } }, x: { ticks: { maxTicksLimit: 7 } } }
         }
     });
@@ -226,10 +237,11 @@ async function renderExerciseChart(Chart) {
 
     const sessions = await getAllWorkoutSessions();
     const now = new Date();
+    const totalDays = calcDayRange(sessions);
     const labels = [];
     const data = [];
 
-    for (let i = 13; i >= 0; i--) {
+    for (let i = totalDays - 1; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
@@ -246,7 +258,7 @@ async function renderExerciseChart(Chart) {
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, title: { display: true, text: '운동량 추이 (14일)', font: { size: 13 } } },
+            plugins: { legend: { display: false }, title: { display: true, text: `운동량 추이 (${totalDays}일)`, font: { size: 13 } } },
             scales: { y: { beginAtZero: true }, x: { ticks: { maxTicksLimit: 7 } } }
         }
     });
