@@ -126,6 +126,7 @@ async function uploadPainLogs() {
         region_key: p.regionKey,
         pain_level: p.painLevel,
         note: p.note ?? null,
+        drawing_image: p.drawing_image ?? null,
     }));
 
     const result = await apiFetch('/portal/sync/painlogs', {

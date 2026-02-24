@@ -108,7 +108,13 @@ async function handleSavePain() {
     const painType = document.querySelector('.pain-chip.active')?.dataset.type || 'dull';
     const note = document.getElementById('pain-note')?.value || '';
 
-    await addPainLog({ regionKey: currentRegionKey, painLevel, painType, note, feeling: painType });
+    // 캔버스에 그림이 있으면 composite 이미지 캡처
+    let drawing_image = null;
+    if (drawCanvas && drawCtx && hasDrawingContent()) {
+        drawing_image = captureCompositeBase64();
+    }
+
+    await addPainLog({ regionKey: currentRegionKey, painLevel, painType, note, feeling: painType, drawing_image });
 
     const slider = document.getElementById('pain-slider');
     const value = document.getElementById('pain-slider-value');
@@ -594,6 +600,55 @@ function clearDrawing() {
 }
 
 // ── 이미지 저장 ──
+
+/** 캔버스에 실제 그림이 있는지 확인 (빈 투명 캔버스가 아닌지) */
+function hasDrawingContent() {
+    if (!drawCtx || !drawCanvas || drawCanvas.width === 0) return false;
+    const data = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height).data;
+    for (let i = 3; i < data.length; i += 4) {
+        if (data[i] > 0) return true;  // alpha > 0 인 픽셀이 하나라도 있으면 그림 있음
+    }
+    return false;
+}
+
+/** 3D 씬 + 드로잉 오버레이 합성 → JPEG Base64 data URL 반환 */
+function captureCompositeBase64() {
+    try {
+        renderer.render(scene, camera);
+        const threeCanvas = renderer.domElement;
+
+        const out = document.createElement('canvas');
+        out.width = threeCanvas.width;
+        out.height = threeCanvas.height;
+        const ctx = out.getContext('2d');
+
+        // 3D 장면
+        ctx.drawImage(threeCanvas, 0, 0);
+
+        // 그림판 오버레이
+        if (drawCanvas && drawCanvas.width > 0) {
+            ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height,
+                          0, 0, out.width, out.height);
+        }
+
+        // 하단 워터마크
+        const dpr = window.devicePixelRatio || 1;
+        const barH = 32 * dpr;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, out.height - barH, out.width, barH);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = `${12 * dpr}px Pretendard, sans-serif`;
+        ctx.textBaseline = 'middle';
+        const dateStr = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        ctx.textAlign = 'left';
+        ctx.fillText(`PostureView  |  ${dateStr}`, 12 * dpr, out.height - barH / 2);
+
+        return out.toDataURL('image/jpeg', 0.7);
+    } catch (e) {
+        console.error('드로잉 캡처 실패:', e);
+        return null;
+    }
+}
 
 async function saveDrawingImage() {
     if (!renderer) return;
